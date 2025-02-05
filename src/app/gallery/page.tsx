@@ -1,5 +1,3 @@
-export const revalidate = 0;
-
 import { getDrawings } from '@/actions';
 import { ClientGallery } from '@/components';
 import Link from 'next/link';
