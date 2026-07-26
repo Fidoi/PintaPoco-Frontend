@@ -98,6 +98,38 @@ sin lógica aparte.
 **Se exporta WebP con calidad 0.8** en vez de PNG. Un dibujo de líneas planas
 pasa de ~300 KB a ~40 KB: siete veces más obras en el mismo plan gratuito.
 
+### Borradores: un `localStorage` por pestaña
+
+Cerrar la pestaña por accidente no debería costar el dibujo. Guardarlo en
+`localStorage` sin más tiene un problema serio: es compartido por todas las
+pestañas del mismo origen, así que con dos abiertas cada guardado pisa el de la
+otra y se pierde trabajo **en silencio**, que es la peor forma de perderlo.
+
+La solución combina los dos almacenes por lo que cada uno hace bien:
+`sessionStorage` es por pestaña y sobrevive a una recarga, así que da identidad;
+`localStorage` sobrevive a cerrar el navegador, así que guarda el contenido. Cada
+pestaña escribe en `pintapoco:borrador:<id>` y nunca toca la de las demás.
+
+Lo que se deriva de ahí:
+
+- **Se guarda solo la instantánea visible, no el historial completo.** Cada paso
+  de deshacer contiene todos los trazos, así que persistir el historial entero
+  crecería en O(n²). Recuperar el dibujo importa; recuperar la capacidad de
+  deshacer treinta pasos de ayer, no.
+- **Las coordenadas se redondean a entero.** En un espacio de 1200×675 el
+  subpíxel no aporta nada, y `1043.2847290039062` ocupa cuatro veces más que
+  `1043`. Es lo que hace viable guardar aquí un dibujo denso.
+- **Restaurar es automático para tu pestaña y con permiso para las demás.** Si
+  recargaste, recuperas lo tuyo sin preguntas. Si el borrador viene de otra
+  pestaña o de una sesión anterior del navegador, es ambiguo: se ofrece.
+- **El guardado final va en `pagehide` y `visibilitychange`**, no en
+  `beforeunload` — este último no se dispara de forma fiable en Safari ni en
+  móviles, que es justo donde se pierde el trabajo al cambiar de aplicación.
+- **Los borradores caducan a los 7 días** y se conservan como mucho 5, con
+  recogida de basura oportunista en cada guardado. Sin eso, cada pestaña nueva
+  dejaría una clave para siempre.
+- **Publicar borra el borrador**: ya no hay nada que recuperar.
+
 ## Diseño
 
 Amable y sin ceremonia. Es una aplicación para hacer garabatos, y la interfaz no
@@ -172,10 +204,37 @@ en un proyecto de esta escala.
 
 ### Moderación
 
-La galería acepta subidas anónimas. `FEATURED_IDS` en `src/config/gallery.ts`
-controla qué obras aparecen en "Destacadas", que es lo primero que ve el
-visitante. Las páginas de obra individual llevan `noindex`: se muestran, pero no
-se indexa contenido de terceros bajo el dominio.
+La galería acepta subidas anónimas, así que hace falta poder retirar un dibujo.
+
+**Modo moderación por secreto compartido**, no por cuentas de usuario. Aquí solo
+modera una persona —la que despliega— y montar registro, sesiones y roles sería
+construir un sistema de identidad para un único sujeto. Se define `ADMIN_SECRET`
+en el entorno, se entra por `/admin` y aparece un botón de retirada sobre cada
+dibujo de la galería. La sesión dura ocho horas.
+
+Detalles que no son opcionales:
+
+- **La cookie guarda el SHA-256 del secreto, nunca el secreto.** Es `httpOnly`,
+  `secure` en producción y `sameSite: strict`, así que ningún script de la página
+  puede leerla.
+- **La comparación es en tiempo constante** (`timingSafeEqual`). Un `===` sobre
+  cadenas corta en el primer carácter distinto, y esa diferencia de tiempo basta
+  para reconstruir el secreto byte a byte. La longitud se comprueba antes,
+  porque `timingSafeEqual` lanza si los búferes no miden lo mismo.
+- **La autorización se verifica en el servidor**, dentro de la propia acción.
+  Ocultar el botón en el cliente no protege nada: un Server Action es un endpoint
+  invocable por cualquiera.
+- **Sin `ADMIN_SECRET` el modo queda desactivado por completo.** El fallo es
+  cerrado, nunca "todos son administradores porque no hay contraseña".
+- **`/admin` es `force-dynamic`.** `esAdmin()` sale antes de tocar `cookies()`
+  cuando no hay secreto, así que Next no detecta ninguna API dinámica y
+  congelaría la página en build — el modo de render acabaría dependiendo de si la
+  variable existía al compilar.
+
+Además, `FEATURED_IDS` en `src/config/gallery.ts` controla qué dibujos aparecen
+en "Destacados", que es lo primero que ve el visitante, y las páginas
+individuales llevan `noindex`: se muestran, pero no se indexa contenido de
+terceros bajo el dominio.
 
 ## Comandos
 

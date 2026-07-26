@@ -27,15 +27,13 @@ import {
 } from 'react';
 import { Layer, Line, Rect, Stage } from 'react-konva';
 
-/**
- * El lienzo trabaja siempre en este sistema de coordenadas y se escala para
- * mostrarse. Asi un trazo hecho en movil y otro hecho en escritorio producen la
- * misma obra, y la exportacion no depende del tamano de la pantalla.
- *
- * 16:9 exacto: encaja con `aspect-video` en la galeria sin fracciones raras.
- */
-const LIENZO_ANCHO = 1200;
-const LIENZO_ALTO = 675;
+import {
+  BLANCO,
+  LIENZO_ALTO,
+  LIENZO_ANCHO,
+  type Instantanea,
+  type Trazo,
+} from '@/lib/lienzo';
 
 /** Ancho del WebP exportado. */
 const EXPORT_ANCHO = 1600;
@@ -45,27 +43,18 @@ const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 5;
 const ZOOM_PASO = 1.25;
 
-const BLANCO = '#FFFFFF';
-
 type Herramienta = 'pincel' | 'goma' | 'pipeta';
 type Eje = 'horizontal' | 'vertical';
 /** Indice de la ranura de color activa. */
 type Ranura = 0 | 1;
 
-type Trazo = {
-  puntos: number[];
-  color: string;
-  grosor: number;
-};
-
-type Instantanea = {
-  trazos: Trazo[];
-  fondo: string;
-};
-
 interface CanvasProps {
   onSave: (dataUrl: string) => void | Promise<void>;
   isSaving: boolean;
+  /** Estado con el que arranca el lienzo, si se recupero un borrador. */
+  borradorInicial?: Instantanea | null;
+  /** Se llama con el estado visible cada vez que cambia el documento. */
+  onCambio?: (instantanea: Instantanea) => void;
 }
 
 const ICONOS: Record<Herramienta, typeof Brush> = {
@@ -77,17 +66,35 @@ const ICONOS: Record<Herramienta, typeof Brush> = {
 const clampZoom = (valor: number) =>
   Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, valor));
 
-export default function Canvas({ onSave, isSaving }: CanvasProps) {
+export default function Canvas({
+  onSave,
+  isSaving,
+  borradorInicial = null,
+  onCambio,
+}: CanvasProps) {
   /**
    * El historial es la unica fuente de verdad: los trazos visibles se derivan
    * del paso actual. Mantenerlos ademas en su propio `useState` obligaba a
    * sincronizar dos copias y era de donde salian los desfases al deshacer.
    */
   const [historial, setHistorial] = useState<Instantanea[]>([
-    { trazos: [], fondo: BLANCO },
+    borradorInicial ?? { trazos: [], fondo: BLANCO },
   ]);
   const [pasoActual, setPasoActual] = useState(0);
-  const { trazos, fondo } = historial[pasoActual];
+  const instantaneaActual = historial[pasoActual];
+  const { trazos, fondo } = instantaneaActual;
+
+  /**
+   * Un unico punto de notificacion en lugar de avisar desde `commit`.
+   *
+   * Deshacer y rehacer tambien cambian el documento visible, y quien acaba de
+   * deshacer y cierra la pestana espera recuperar lo que veia, no lo ultimo que
+   * dibujo. Observar el estado derivado los cubre todos sin repetir la llamada
+   * en cinco sitios.
+   */
+  useEffect(() => {
+    onCambio?.(instantaneaActual);
+  }, [instantaneaActual, onCambio]);
 
   const [trazoActual, setTrazoActual] = useState<number[]>([]);
 

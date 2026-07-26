@@ -5,6 +5,7 @@ import { GalleryGrid, GalleryNotice } from '@/components';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { FEATURED_IDS, PAGE_SIZE } from '@/config/gallery';
 import { getDrawings } from '@/data/drawings';
+import { esAdmin } from '@/lib/admin';
 import type { Drawing } from '@/lib/drawings';
 
 export const metadata: Metadata = {
@@ -15,9 +16,10 @@ export const metadata: Metadata = {
 type PageProps = { searchParams: Promise<{ page?: string }> };
 
 export default async function GalleryPage({ searchParams }: PageProps) {
-  const [{ page }, resultado] = await Promise.all([
+  const [{ page }, resultado, admin] = await Promise.all([
     searchParams,
     getDrawings(),
+    esAdmin(),
   ]);
 
   return (
@@ -31,10 +33,23 @@ export default async function GalleryPage({ searchParams }: PageProps) {
           </p>
         </header>
 
+        {admin && (
+          <p className='mb-6 rounded-xl border border-brand/30 bg-brand-soft px-4 py-2.5 text-sm text-brand-dark'>
+            Moderacion activa: puedes retirar cualquier dibujo.{' '}
+            <Link href='/admin' className='font-semibold underline'>
+              Cerrar sesion
+            </Link>
+          </p>
+        )}
+
         {!resultado.ok ? (
           <GalleryNotice motivo={resultado.reason} />
         ) : (
-          <GalleryContent drawings={resultado.drawings} page={page} />
+          <GalleryContent
+            drawings={resultado.drawings}
+            page={page}
+            admin={admin}
+          />
         )}
       </main>
 
@@ -46,9 +61,11 @@ export default async function GalleryPage({ searchParams }: PageProps) {
 function GalleryContent({
   drawings,
   page,
+  admin,
 }: {
   drawings: Drawing[];
   page?: string;
+  admin: boolean;
 }) {
   if (drawings.length === 0) return <GalleryNotice motivo='empty' />;
 
@@ -77,7 +94,7 @@ function GalleryContent({
       {destacadas.length > 0 && (
         <section>
           <SectionTitle titulo='Destacados' nota='Nuestra seleccion' />
-          <GalleryGrid drawings={destacadas} />
+          <GalleryGrid drawings={destacadas} admin={admin} />
         </section>
       )}
 
@@ -88,7 +105,7 @@ function GalleryContent({
             recientes.length === 1 ? 'dibujo' : 'dibujos'
           }`}
         />
-        <GalleryGrid drawings={visibles} />
+        <GalleryGrid drawings={visibles} admin={admin} />
 
         {totalPaginas > 1 && (
           <Paginacion actual={paginaActual} total={totalPaginas} />
