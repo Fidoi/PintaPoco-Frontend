@@ -30,11 +30,9 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  experimental: {
-    turbo: {
-      resolveAlias: {
-        canvas: './src/lib/empty-module.ts',
-      },
+  turbopack: {
+    resolveAlias: {
+      canvas: './src/lib/empty-module.ts',
     },
   },
 };
