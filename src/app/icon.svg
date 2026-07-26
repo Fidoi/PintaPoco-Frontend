@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="PintaPoco">
+  <rect width="32" height="32" rx="7.5" fill="#6366F1"/>
+  <path
+    d="M6.6 19.4C9.1 11.6 13.1 11.6 16 16.2 18.9 20.8 22.9 20.8 25.4 13"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="3.7"
+    stroke-linecap="round"
+  />
+</svg>
