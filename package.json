@@ -1,7 +1,8 @@
 {
-  "name": "paint-frontend",
+  "name": "pintapoco",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.4",
   "scripts": {
     "dev": "next dev -p 3002 --turbopack",
     "build": "next build",
@@ -10,23 +11,27 @@
   },
   "dependencies": {
     "@heroui/alert": "^2.2.10",
-    "@heroui/card": "^2.2.10",
-    "@heroui/chip": "^2.2.7",
-    "@heroui/input": "^2.4.10",
+    "@heroui/button": "^2.2.13",
     "@heroui/modal": "^2.2.8",
     "@heroui/slider": "^2.4.8",
     "@heroui/system": "^2.4.7",
     "@heroui/theme": "^2.4.6",
-    "@nextui-org/react": "^2.6.11",
-    "axios": "^1.7.9",
-    "canvas": "^3.1.0",
+    "@vercel/blob": "^0.27.1",
     "framer-motion": "^12.0.6",
     "konva": "^9.3.18",
     "lucide-react": "^0.474.0",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-konva": "^19.0.2"
+    "react-konva": "^19.0.2",
+    "server-only": "^0.0.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@heroui/shared-utils",
+      "sharp",
+      "unrs-resolver"
+    ]
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

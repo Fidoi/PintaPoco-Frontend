@@ -2,46 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  padding: 0;
-
-  background: linear-gradient(45deg, #f06, #4a90e2, #8e44ad, #f39c12);
-  background-size: 400% 400%;
-  animation: gradientBackground 15s ease infinite;
-  font-family: 'Arial', sans-serif;
-}
-
-@keyframes gradientBackground {
-  0% {
-    background-position: 0% 50%;
+/**
+ * El fondo tiene un unico trabajo: desaparecer.
+ *
+ * Antes habia aqui un degradado animado de cuatro colores. Competia con cada
+ * obra, alteraba la percepcion de los colores que el usuario acababa de elegir
+ * y hacia ilegible cualquier dibujo claro.
+ */
+@layer base {
+  body {
+    @apply bg-paper text-ink antialiased;
   }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
 
-h1 {
-  font-size: 3rem;
-  color: white;
-  text-align: center;
-  line-height: 100vh;
-  animation: textGlow 1.5s ease-in-out infinite alternate;
-}
-
-@keyframes textGlow {
-  0% {
-    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00ff, 0 0 30px #ff00ff;
+  ::selection {
+    @apply bg-brand/20;
   }
-  100% {
-    text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff,
-      0 0 40px #ff00ff;
+
+  /* Foco visible y consistente sin repetirlo en cada componente. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-paper;
   }
 }
 
-button:hover {
-  transform: scale(1.1);
+@layer components {
+  /** Marco blanco alrededor de la obra: la separa del fondo sin adornos. */
+  .mat {
+    @apply rounded-2xl bg-surface p-3 shadow-soft ring-1 ring-line;
+  }
+}
+
+/*
+ * Respeta a quien ha pedido menos movimiento en su sistema. Son cinco lineas y
+ * cubren todas las transiciones de la aplicacion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

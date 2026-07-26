@@ -1,14 +1,12 @@
-'use client';
-
 import { Frame } from '@/components';
-import { Card } from '@heroui/card';
 
+/**
+ * Server Component: la interactividad vive dentro de `Frame`, que si es
+ * cliente. Marcar la pagina entera como `'use client'` arrastraba al bundle
+ * codigo que no lo necesita.
+ *
+ * Sin contenedor ni ancho maximo: el estudio ocupa la pantalla entera.
+ */
 export default function Page() {
-  return (
-    <div className='min-h-screen flex flex-col items-center py-10'>
-      <Card className='flex flex-col items-center bg-slate-400 p-4'>
-        <Frame />
-      </Card>
-    </div>
-  );
+  return <Frame />;
 }
